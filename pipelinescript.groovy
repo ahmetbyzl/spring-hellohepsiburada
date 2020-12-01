@@ -46,21 +46,21 @@ pipeline {
           // withCredentials([usernameColonPassword(credentialsId: 'gcr:gcr-credentials', variable: 'google-cred')]) {
           
           
-       // sh'''
-        //    #!/bin/bash
+         sh'''
+         #!/bin/bash
             
-          //  a=$(echo $(kubectl get deployments | grep spring-hello | wc -l))
-          //  if [ $a -ge 1 ]
-         //   then
-        //    kubectl patch deployment spring-hello -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"spring-hello\",\"image\":\"\$registry:\$BUILD_NUMBER\"}]}}}}"
-
+          a=$(echo $(kubectl get deployments | grep spring-hello | wc -l))
+          if [ $a -ge 1 ]
+          then
+        
+            cd /var/lib/jenkins/workspace/kubernetes-deploy
+            pwd
+            kubectl apply -f template-k8s.yml
+            else
             
-          //  else
-                    sh 'cd /var/lib/jenkins/workspace/kubernetes-deploy '
-                    sh 'pwd'
-                    sh 'kubectl apply -f template-k8s.yml'
-      //      fi
-    //    '''
+            kubectl create -f template-k8s.yml
+           fi
+            '''
         // }
       }
     } 
