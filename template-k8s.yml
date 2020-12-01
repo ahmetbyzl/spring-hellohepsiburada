@@ -24,7 +24,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: spring-hello
-        image: gcr.io/concrete-crow-297015/ahmet-app:10
+        image: gcr.io/concrete-crow-297015/ahmet-app:latest
         imagePullPolicy: Always
         env:
         - name: JAVA_OPTS
