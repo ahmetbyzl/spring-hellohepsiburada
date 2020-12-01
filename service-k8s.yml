@@ -1,0 +1,22 @@
+# SERVICE
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: spring-hello
+    name: spring-hello
+  name: spring-hello
+  namespace: default
+spec:
+  ports:
+  - port: 11130
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    run: spring-hello
+  sessionAffinity: None
+  type: LoadBalancer
+status:
+  loadBalancer: {}
+  

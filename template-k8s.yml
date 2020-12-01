@@ -1,0 +1,132 @@
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: spring-hello
+  labels:
+    run: spring-hello
+spec:
+  revisionHistoryLimit: 1
+  replicas: 1
+  selector:
+    matchLabels:
+      run: spring-hello
+  strategy:
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        run: spring-hello
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: spring-hello
+        image: gcr.io/concrete-crow-297015/ahmet-app:10
+        imagePullPolicy: Always
+        env:
+        - name: JAVA_OPTS
+          value: '-XX:MaxRAM=450m'
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "250Mi"
+          limits:
+            memory: "250Gi"
+        ports:
+        - containerPort: 8080
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          timeoutSeconds: 1
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          timeoutSeconds: 1
+          periodSeconds: 10
+          initialDelaySeconds: 10
+      terminationGracePeriodSeconds: 30        
+      imagePullSecrets:
+        - name: storecheckersecretlatest
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100  
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - spring-hello
+              topologyKey: "kubernetes.io/hostname"
+              
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: spring-hello
+    name: spring-hello
+  name: spring-hello
+  namespace: default
+spec:
+  ports:
+  - port: 11130
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    run: spring-hello
+  sessionAffinity: None
+  type: LoadBalancer
+status:
+  loadBalancer: {}
+  
+  
+---
+ 
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: spring-hello
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: spring-hello
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+  - type: Pods
+    pods:
+      metric:
+        name: packets-per-second
+      target:
+        type: AverageValue
+        averageValue: 1k
+  - type: Object
+    object:
+      metric:
+        name: requests-per-second
+      describedObject:
+        apiVersion: networking.k8s.io/v1beta1
+        kind: Service
+        name: spring-hello
+      target:
+        type: Value
+        value: 1k
